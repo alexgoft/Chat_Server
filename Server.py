@@ -50,11 +50,8 @@ class Server:
                     client_msg_to_console = "{}: {}".format(self._clients[client_socket]['client_name'], client_msg)
                     self.broadcast_msg(client_msg_to_console)
         except:
-            self._disconnect_client(client_name, client_socket)
-
-    def _disconnect_client(self, client_name, client_socket):
-        del self._clients[client_socket]
-        self.broadcast_msg('{} disconnected.'.format(client_name))
+            del self._clients[client_socket]
+            self.broadcast_msg('{} disconnected.'.format(client_name))
 
     def broadcast_msg(self, msg, client_socket=None):
         print(msg)
