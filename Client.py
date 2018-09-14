@@ -19,30 +19,43 @@ class Client:
 
     def client_to_server_handler(self):
 
-        # Welcome messages
+        # Welcome messages.
         print('\n====================')
-        print("Enter {} to quit session.".format(CLIENT_QUIT_MESSAGE))
+        print("Enter {} to disconnect from the server.".format(CLIENT_QUIT_MESSAGE))
         print("Enter {} to get list of clients connected to server.".format(CLIENT_CLIENTS_MESSAGE))
         print('====================\n')
 
         while True:
-            msg = input().encode()
-            # if msg == CLIENT_QUIT_MESSAGE:
-            #     break
-            self._client_socket.send(msg)
+
+            msg = input()
+            self._client_socket.send(msg.encode())
+
+            # User wish do close the connection.
+            if msg == CLIENT_QUIT_MESSAGE:
+                self._client_socket.close()
+                break
 
     def server_to_client_handler(self):
 
+        # As long as socket is not dead, keep probing.
         while True:
-            msg_from_server = self._client_socket.recv(Server.BUFFER_SIZE).decode("utf-8")
-            if msg_from_server:
-                print(msg_from_server)
 
-                if msg_from_server == Server.SERVER_WELCOME_MESSAGE:
-                    name = input().encode()
-                    self._client_socket.send(name)
+            try:
+                msg_from_server = self._client_socket.recv(Server.BUFFER_SIZE).decode("utf-8")
+                if msg_from_server:
+                    print(msg_from_server)
 
-                    Thread(target=self.client_to_server_handler, args=()).start()
+                    if msg_from_server == Server.SERVER_WELCOME_MESSAGE:
+                        name = input().encode()
+                        self._client_socket.send(name)
+
+                        # Communication will be possible only after client's initial identification.
+                        Thread(target=self.client_to_server_handler, args=()).start()
+            except:
+                msg = "You disconnected from the server." if self._client_socket.fileno() == -1 else "Connection error."
+                print(msg)
+
+                return
 
     def _connect(self):
 
