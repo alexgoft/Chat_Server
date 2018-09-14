@@ -1,11 +1,9 @@
 from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
-
 from intro_2_python.chat_server import Server
-import intro_2_python.chat_server.utils as utils
 
-QUIT_MESSAGE = '{quit}'
-CLIENTS_MESSAGE = '{clients}'
+CLIENT_QUIT_MESSAGE = '{quit}'
+CLIENT_CLIENTS_MESSAGE = '{clients}'
 
 
 class Client:
@@ -18,13 +16,29 @@ class Client:
     def client_to_server_handler(self):
 
         # Welcome messages
-        print("\nEnter {} to quit session.".format(QUIT_MESSAGE))
-        print("Enter {} to get list of clients connected to server.\n".format(CLIENTS_MESSAGE))
+        print('\n====================')
+        print("Enter {} to quit session.".format(CLIENT_QUIT_MESSAGE))
+        print("Enter {} to get list of clients connected to server.".format(CLIENT_CLIENTS_MESSAGE))
+        print('====================\n')
 
-        msg = ''
-        while msg != QUIT_MESSAGE:
-            msg_to_server = input('>> ').encode()
-            self._client_socket.send(msg_to_server)
+        while True:
+            msg = input().encode()
+            if msg == CLIENT_QUIT_MESSAGE:
+                break
+            self._client_socket.send(msg)
+
+    def server_to_client_handler(self):
+
+        while True:
+            msg_from_server = self._client_socket.recv(Server.BUFFER_SIZE).decode("utf-8")
+            if msg_from_server:
+                print(msg_from_server)
+
+                if msg_from_server == Server.SERVER_WELCOME_MESSAGE:
+                    name = input().encode()
+                    self._client_socket.send(name)
+
+                    Thread(target=self.client_to_server_handler, args=()).start()
 
     def _connect(self):
 
@@ -33,15 +47,7 @@ class Client:
         print("You are connected to server.", '\n')
 
         # Handle server communication.
-        while True:
-            msg_from_server = self._client_socket.recv(Server.BUFFER_SIZE).decode("utf-8")
-            print(msg_from_server)
-
-            if msg_from_server == Server.WELCOME_MESSAGE:
-                name = input().encode()
-                self._client_socket.send(name)
-
-                utils.create_thread_helper(self.client_to_server_handler())
+        Thread(target=self.server_to_client_handler, args=()).start()
 
 
 if __name__ == '__main__':
