@@ -33,7 +33,7 @@ class Client:
             # User wish do close the connection.
             if msg == CLIENT_QUIT_MESSAGE:
                 self._client_socket.close()
-                break
+                return
 
     def server_to_client_handler(self):
 
