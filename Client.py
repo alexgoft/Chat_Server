@@ -1,11 +1,15 @@
+# ================IMPORTS======================#
+
 from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
 from intro_2_python.chat_server import Server
 
+# ================CONSTANTS======================#
 CLIENT_QUIT_MESSAGE = '{quit}'
 CLIENT_CLIENTS_MESSAGE = '{clients}'
 
 
+# =================CLASS=====================#
 class Client:
 
     def __init__(self):
@@ -23,8 +27,8 @@ class Client:
 
         while True:
             msg = input().encode()
-            if msg == CLIENT_QUIT_MESSAGE:
-                break
+            # if msg == CLIENT_QUIT_MESSAGE:
+            #     break
             self._client_socket.send(msg)
 
     def server_to_client_handler(self):
@@ -49,6 +53,8 @@ class Client:
         # Handle server communication.
         Thread(target=self.server_to_client_handler, args=()).start()
 
+
+# =================MAIN=====================#
 
 if __name__ == '__main__':
     client = Client()

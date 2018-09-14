@@ -68,5 +68,6 @@ class Server:
             threads.append(client_thread)
 
 
+# =================MAIN=====================#
 if __name__ == '__main__':
     server = Server()
