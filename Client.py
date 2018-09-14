@@ -25,6 +25,7 @@ class Client:
         print("Enter {} to get list of clients connected to server.".format(CLIENT_CLIENTS_MESSAGE))
         print('====================\n')
 
+        # As long as socket is not dead, keep sending messages to server.
         while True:
 
             msg = input()
@@ -37,7 +38,7 @@ class Client:
 
     def server_to_client_handler(self):
 
-        # As long as socket is not dead, keep probing.
+        # As long as socket is not dead, keep checking for messages from server.
         while True:
 
             try:
