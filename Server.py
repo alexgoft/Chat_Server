@@ -28,7 +28,7 @@ class Server:
 
         self._run()
 
-    def client_handler(self, client_socket, client_address):
+    def client_handler(self, client_socket):
         try:
             client_name = self._establish_new_connection(client_socket)
 
@@ -58,14 +58,19 @@ class Server:
 
         self._clients[client_socket] = client_name
 
-        self.broadcast_msg("{} has connected.".format(client_name), client_socket=client_socket)
+        self.broadcast_msg("{} has connected.".format(client_name), exclude_socket=client_socket)
 
         return client_name
 
-    def broadcast_msg(self, msg, client_socket=None):
+    def broadcast_msg(self, msg, exclude_socket=None, only_sockets=None):
+        # Exclude socket will not receive msg.
+        # If only_sockets is not none, only only_sockets will receive msg.
+
         print(msg)
-        for sock in self._clients:
-            if sock != client_socket:
+
+        iterate_sockets = only_sockets if only_sockets else self._clients
+        for sock in iterate_sockets:
+            if sock != exclude_socket:
                 sock.send(msg.encode())
 
     def _run(self):
@@ -74,8 +79,8 @@ class Server:
 
         threads = []
         while True:
-            client_socket, client_address = self._server_socket.accept()
-            client_thread = Thread(target=self.client_handler, args=(client_socket, client_address))
+            client_socket, _ = self._server_socket.accept()
+            client_thread = Thread(target=self.client_handler, args=(client_socket,))
             client_thread.start()
 
             threads.append(client_thread)
