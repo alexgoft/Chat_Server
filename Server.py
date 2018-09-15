@@ -5,7 +5,9 @@ from intro_2_python.chat_server import Client
 
 # ================CONSTANTS======================#
 
-SERVER_WELCOME_MESSAGE = "Welcome!! Please enter your nickname:"
+SERVER_WELCOME_MESSAGE = "Welcome! Please enter your nickname:"
+SERVER_NAME_TAKEN_MESSAGE = "This nickname is already taken, choose another one:"
+OK = "\nYou are logged as {}. You may start chatting"
 HOST = socket.gethostbyname(socket.gethostname())
 PORT = 658
 BUFFER_SIZE = 1024
@@ -28,17 +30,7 @@ class Server:
 
     def client_handler(self, client_socket, client_address):
         try:
-            # TODO IMPLEMENT LOGIC FOR UNIQUE NAMES
-
-            # First message exchange - Get name of client and start communication.
-            client_socket.send(SERVER_WELCOME_MESSAGE.encode())
-            client_name = client_socket.recv(BUFFER_SIZE).decode("utf-8")
-
-            connected_msg = "{} has connected.".format(client_name)
-            self.broadcast_msg(connected_msg, client_socket=client_socket)
-
-            self._clients.setdefault(client_socket, {})['client_address'] = client_address
-            self._clients[client_socket]['client_name'] = client_name
+            client_name = self._establish_new_connection(client_socket)
 
             while True:
                 client_msg = client_socket.recv(BUFFER_SIZE).decode("utf-8")
@@ -47,11 +39,28 @@ class Server:
                     if client_msg == Client.CLIENT_QUIT_MESSAGE:
                         raise Exception
 
-                    client_msg_to_console = "{}: {}".format(self._clients[client_socket]['client_name'], client_msg)
-                    self.broadcast_msg(client_msg_to_console)
+                    self.broadcast_msg("{}: {}".format(self._clients[client_socket], client_msg))
         except:
             del self._clients[client_socket]
             self.broadcast_msg('{} disconnected.'.format(client_name))
+
+    def _establish_new_connection(self, client_socket):
+
+        # First message exchange - Get name of client and start communication.
+        client_socket.send(SERVER_WELCOME_MESSAGE.encode())
+        client_name = client_socket.recv(BUFFER_SIZE).decode("utf-8")
+        while client_name in self._clients.values():
+            client_socket.send(SERVER_NAME_TAKEN_MESSAGE.encode())
+            client_name = client_socket.recv(BUFFER_SIZE).decode("utf-8")
+        else:
+            # Server send OK - communication can be carried out.
+            client_socket.send(OK.format(client_name).encode())
+
+        self._clients[client_socket] = client_name
+
+        self.broadcast_msg("{} has connected.".format(client_name), client_socket=client_socket)
+
+        return client_name
 
     def broadcast_msg(self, msg, client_socket=None):
         print(msg)

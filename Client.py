@@ -46,9 +46,13 @@ class Client:
                 if msg_from_server:
                     print(msg_from_server)
 
-                    if msg_from_server == Server.SERVER_WELCOME_MESSAGE:
+                    if msg_from_server == Server.SERVER_WELCOME_MESSAGE or \
+                       msg_from_server == Server.SERVER_NAME_TAKEN_MESSAGE:
+
                         name = input().encode()
                         self._client_socket.send(name)
+
+                    elif "You may start chatting" in msg_from_server:
 
                         # Communication will be possible only after client's initial identification.
                         Thread(target=self.client_to_server_handler, args=()).start()
@@ -62,7 +66,7 @@ class Client:
 
         self._client_socket.connect(Server.ADDRESS)
 
-        print("You are connected to server.", '\n')
+        print("%%% You are connected to {}:{} %%%".format(Server.ADDRESS[0], Server.ADDRESS[1]), '\n')
 
         # Handle server communication.
         Thread(target=self.server_to_client_handler, args=()).start()
