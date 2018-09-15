@@ -13,6 +13,7 @@ CLIENT_CLIENTS_MESSAGE = '{clients}'
 class Client:
 
     def __init__(self):
+
         self._client_socket = socket(AF_INET, SOCK_STREAM)
 
         self._connect()
@@ -20,10 +21,11 @@ class Client:
     def client_to_server_handler(self):
 
         # Welcome messages.
-        print('\n====================')
+        print('\n=========HOW_TO===========')
         print("Enter {} to disconnect from the server.".format(CLIENT_QUIT_MESSAGE))
         print("Enter {} to get list of clients connected to server.".format(CLIENT_CLIENTS_MESSAGE))
-        print('====================\n')
+        print("Enter {Username} with space before a message to send it privately.")
+        print('==========================\n')
 
         # As long as socket is not dead, keep sending messages to server.
         while True:
@@ -40,7 +42,6 @@ class Client:
 
         # As long as socket is not dead, keep checking for messages from server.
         while True:
-
             try:
                 msg_from_server = self._client_socket.recv(Server.BUFFER_SIZE).decode("utf-8")
                 if msg_from_server:

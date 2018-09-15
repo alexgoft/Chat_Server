@@ -1,13 +1,19 @@
 # ================IMPORTS======================#
 import socket
+import re
 from threading import Thread
 from intro_2_python.chat_server import Client
 
 # ================CONSTANTS======================#
 
-SERVER_WELCOME_MESSAGE = "Welcome! Please enter your nickname:"
-SERVER_NAME_TAKEN_MESSAGE = "This nickname is already taken, choose another one:"
+SERVER_WELCOME_MESSAGE = "Welcome. Please enter your nickname (digits and english letters only):"
+SERVER_NAME_TAKEN_MESSAGE = "!! This nickname is already taken, choose another one: !!"
 OK = "\nYou are logged as {}. You may start chatting"
+PUBLIC_MSG = "[PUBLIC] {}: {}"
+PRIVATE_MSG = "[PRIVATE] {}: {}"
+PRIVATE_MSG_ERR_SELF = "!! Cant send private message: Cant send to yourself !!"
+PRIVATE_MSG_ERR_NO_USER = "!! Cant send private message: User does not exists !!"
+
 HOST = socket.gethostbyname(socket.gethostname())
 PORT = 658
 BUFFER_SIZE = 1024
@@ -26,10 +32,11 @@ class Server:
 
         self._clients_by_socket = {}
         self._clients_by_name = {}
-
+        self._private_msg_pattern = re.compile("{[0-9a-zA-Z_]+}\s.*")
         self._run()
 
     def _client_handler(self, client_socket):
+
         try:
             client_name = self._establish_new_connection(client_socket)
 
@@ -37,12 +44,27 @@ class Server:
                 client_msg = client_socket.recv(BUFFER_SIZE).decode("utf-8")
                 if client_msg:
 
+                    # Client ends connection
                     if client_msg == Client.CLIENT_QUIT_MESSAGE:
                         raise Exception
+                    # Client want list of online clients
                     elif client_msg == Client.CLIENT_CLIENTS_MESSAGE:
                         self._broadcast_msg(self._get_clients_list_str(), only_sockets=[client_socket])
+                    # Client wish to contact specific user.
+                    elif self._private_msg_pattern.match(client_msg):
+                        client_msg_arr = client_msg.split('{')[1].split('}')
+
+                        client_to_contact = client_msg_arr[0]
+                        private_msg_to_send = client_msg_arr[1][1:]
+
+                        if client_to_contact == client_name:
+                            self._broadcast_msg(PRIVATE_MSG_ERR_SELF, only_sockets=[client_socket])
+                        elif client_to_contact not in self._clients_by_name.keys():
+                            self._broadcast_msg(PRIVATE_MSG_ERR_NO_USER, only_sockets=[client_socket])
+                        else:
+                            pass
                     else:
-                        self._broadcast_msg("{}: {}".format(self._clients_by_socket[client_socket], client_msg))
+                        self._broadcast_msg(PUBLIC_MSG.format(self._clients_by_socket[client_socket], client_msg))
         except:
             del self._clients_by_socket[client_socket]
             del self._clients_by_name[client_name]
@@ -69,6 +91,7 @@ class Server:
         return client_name
 
     def _get_clients_list_str(self):
+
         client_names = self._clients_by_socket.values()
 
         clients_str = '--- Clients ---\n'
@@ -79,8 +102,9 @@ class Server:
         return clients_str
 
     def _broadcast_msg(self, msg, exclude_socket=None, only_sockets=None):
-        # Exclude socket will not receive msg.
-        # If only_sockets is not none, only only_sockets will receive msg.
+
+        # exclude_socket - socket will not receive msg.
+        # only_sockets is not none - only only_sockets will receive msg.
 
         print(msg)
 
@@ -90,6 +114,7 @@ class Server:
                 sock.send(msg.encode())
 
     def _run(self):
+
         print('%%% Server is up and running %%%')
         print('%%% Server Address {}:{} %%%'.format(HOST, PORT), '\n')
 
