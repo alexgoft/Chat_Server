@@ -7,6 +7,9 @@ from intro_2_python.chat_server import Server
 # ================CONSTANTS======================#
 CLIENT_QUIT_MESSAGE = '{quit}'
 CLIENT_CLIENTS_MESSAGE = '{clients}'
+DISCONNECT_MSG = "You disconnected from the server."
+CONNECTION_ERR = "Connection error."
+START_CHATTING = "You may start chatting"
 
 
 # =================CLASS=====================#
@@ -48,17 +51,17 @@ class Client:
                     print(msg_from_server)
 
                     if msg_from_server == Server.SERVER_WELCOME_MESSAGE or \
-                       msg_from_server == Server.SERVER_NAME_TAKEN_MESSAGE:
+                            msg_from_server == Server.SERVER_NAME_TAKEN_MESSAGE:
 
                         name = input().encode()
                         self._client_socket.send(name)
 
-                    elif "You may start chatting" in msg_from_server:
+                    elif START_CHATTING in msg_from_server:
 
                         # Communication will be possible only after client's initial identification.
                         Thread(target=self.client_to_server_handler, args=()).start()
             except:
-                msg = "You disconnected from the server." if self._client_socket.fileno() == -1 else "Connection error."
+                msg = DISCONNECT_MSG if self._client_socket.fileno() == -1 else CONNECTION_ERR
                 print(msg)
 
                 return

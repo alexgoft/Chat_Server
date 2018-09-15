@@ -6,13 +6,15 @@ from intro_2_python.chat_server import Client
 
 # ================CONSTANTS======================#
 
-SERVER_WELCOME_MESSAGE = "Welcome. Please enter your nickname (digits and english letters only):"
+SERVER_WELCOME_MESSAGE = "Welcome!! Please enter your nickname (Characters and Digits only):"
 SERVER_NAME_TAKEN_MESSAGE = "!! This nickname is already taken, choose another one: !!"
 OK = "\nYou are logged as {}. You may start chatting"
 PUBLIC_MSG = "[PUBLIC] {}: {}"
-PRIVATE_MSG = "[PRIVATE] {}: {}"
+PRIVATE_MSG = "[PRIVATE] {}->{}: {}"
 PRIVATE_MSG_ERR_SELF = "!! Cant send private message: Cant send to yourself !!"
 PRIVATE_MSG_ERR_NO_USER = "!! Cant send private message: User does not exists !!"
+USER_CONNECTED = "{} has connected."
+USER_DISCONNECTED = '{} disconnected.'
 
 HOST = socket.gethostbyname(socket.gethostname())
 PORT = 658
@@ -30,9 +32,9 @@ class Server:
         self._server_socket.bind(ADDRESS)
         self._server_socket.listen(5)
 
-        self._clients_by_socket = {}
         self._clients_by_name = {}
         self._private_msg_pattern = re.compile("{[0-9a-zA-Z_]+}\s.*")
+
         self._run()
 
     def _client_handler(self, client_socket):
@@ -44,55 +46,55 @@ class Server:
                 client_msg = client_socket.recv(BUFFER_SIZE).decode("utf-8")
                 if client_msg:
 
-                    # Client ends connection
                     if client_msg == Client.CLIENT_QUIT_MESSAGE:
                         raise Exception
-                    # Client want list of online clients
                     elif client_msg == Client.CLIENT_CLIENTS_MESSAGE:
                         self._broadcast_msg(self._get_clients_list_str(), only_sockets=[client_socket])
-                    # Client wish to contact specific user.
                     elif self._private_msg_pattern.match(client_msg):
-                        client_msg_arr = client_msg.split('{')[1].split('}')
-
-                        client_to_contact = client_msg_arr[0]
-                        private_msg_to_send = client_msg_arr[1][1:]
-
-                        if client_to_contact == client_name:
-                            self._broadcast_msg(PRIVATE_MSG_ERR_SELF, only_sockets=[client_socket])
-                        elif client_to_contact not in self._clients_by_name.keys():
-                            self._broadcast_msg(PRIVATE_MSG_ERR_NO_USER, only_sockets=[client_socket])
-                        else:
-                            pass
+                        self._send_private_msg(client_msg, client_name, client_socket)
                     else:
-                        self._broadcast_msg(PUBLIC_MSG.format(self._clients_by_socket[client_socket], client_msg))
+                        self._broadcast_msg(PUBLIC_MSG.format(client_name, client_msg))
         except:
-            del self._clients_by_socket[client_socket]
             del self._clients_by_name[client_name]
 
-            self._broadcast_msg('{} disconnected.'.format(client_name))
+            self._broadcast_msg(USER_DISCONNECTED.format(client_name))
+
+    def _send_private_msg(self, client_msg, client_name, client_socket):
+
+        client_msg_arr = client_msg.split('{')[1].split('}')
+
+        client_to_contact = client_msg_arr[0]
+        private_msg_to_send = client_msg_arr[1][1:]
+
+        if client_to_contact == client_name:
+            self._broadcast_msg(PRIVATE_MSG_ERR_SELF, only_sockets=[client_socket])
+        elif client_to_contact not in self._clients_by_name.keys():
+            self._broadcast_msg(PRIVATE_MSG_ERR_NO_USER, only_sockets=[client_socket])
+        else:
+            self._broadcast_msg(PRIVATE_MSG.format(client_name, client_to_contact, private_msg_to_send),
+                                only_sockets=[client_socket, self._clients_by_name[client_to_contact]])
 
     def _establish_new_connection(self, client_socket):
 
         # First message exchange - Get name of client and start communication.
         client_socket.send(SERVER_WELCOME_MESSAGE.encode())
         client_name = client_socket.recv(BUFFER_SIZE).decode("utf-8")
-        while client_name in self._clients_by_socket.values():
+        while client_name in self._clients_by_name.keys():
             client_socket.send(SERVER_NAME_TAKEN_MESSAGE.encode())
             client_name = client_socket.recv(BUFFER_SIZE).decode("utf-8")
         else:
             # Server send OK - communication can be carried out.
             client_socket.send(OK.format(client_name).encode())
 
-        self._clients_by_socket[client_socket] = client_name
         self._clients_by_name[client_name] = client_socket
 
-        self._broadcast_msg("{} has connected.".format(client_name), exclude_socket=client_socket)
+        self._broadcast_msg(USER_CONNECTED.format(client_name), exclude_socket=client_socket)
 
         return client_name
 
     def _get_clients_list_str(self):
 
-        client_names = self._clients_by_socket.values()
+        client_names = self._clients_by_name.keys()
 
         clients_str = '--- Clients ---\n'
         for name in client_names:
@@ -108,7 +110,7 @@ class Server:
 
         print(msg)
 
-        iterate_sockets = only_sockets if only_sockets else self._clients_by_socket
+        iterate_sockets = only_sockets if only_sockets else self._clients_by_name.values()
         for sock in iterate_sockets:
             if sock != exclude_socket:
                 sock.send(msg.encode())
