@@ -1,11 +1,10 @@
-# ================IMPORTS======================#
+# ================IMPORTS====================== #
 import socket
 import re
 from threading import Thread
 from intro_2_python.chat_server import Client
 
-# ================CONSTANTS======================#
-
+# ================CONSTANTS====================== #
 SERVER_WELCOME_MESSAGE = "Welcome!! Please enter your nickname (Characters and Digits only):"
 SERVER_NAME_TAKEN_MESSAGE = "!! This nickname is already taken, choose another one: !!"
 OK = "\nYou are logged as {}. You may start chatting"
@@ -16,14 +15,14 @@ PRIVATE_MSG_ERR_NO_USER = "!! Cant send private message: User does not exists !!
 USER_CONNECTED = "{} has connected."
 USER_DISCONNECTED = '{} disconnected.'
 
+# ============================================== #
 HOST = socket.gethostbyname(socket.gethostname())
 PORT = 658
 BUFFER_SIZE = 1024
 ADDRESS = (HOST, PORT)
 
 
-# =================CLASS=====================#
-
+# =================CLASS===================== #
 class Server:
 
     def __init__(self):
@@ -78,6 +77,7 @@ class Server:
 
         # First message exchange - Get name of client and start communication.
         client_socket.send(SERVER_WELCOME_MESSAGE.encode())
+
         client_name = client_socket.recv(BUFFER_SIZE).decode("utf-8")
         while client_name in self._clients_by_name.keys():
             client_socket.send(SERVER_NAME_TAKEN_MESSAGE.encode())

@@ -1,10 +1,9 @@
-# ================IMPORTS======================#
-
+# ================IMPORTS====================== #
 from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
 from intro_2_python.chat_server import Server
 
-# ================CONSTANTS======================#
+# ================CONSTANTS====================== #
 CLIENT_QUIT_MESSAGE = '{quit}'
 CLIENT_CLIENTS_MESSAGE = '{clients}'
 DISCONNECT_MSG = "You disconnected from the server."
@@ -12,7 +11,7 @@ CONNECTION_ERR = "Connection error."
 START_CHATTING = "You may start chatting"
 
 
-# =================CLASS=====================#
+# =================CLASS===================== #
 class Client:
 
     def __init__(self):
@@ -21,7 +20,7 @@ class Client:
 
         self._connect()
 
-    def client_to_server_handler(self):
+    def _client_to_server_handler(self):
 
         # Welcome messages.
         print('\n=========HOW_TO===========')
@@ -41,7 +40,7 @@ class Client:
                 self._client_socket.close()
                 return
 
-    def server_to_client_handler(self):
+    def _server_to_client_handler(self):
 
         # As long as socket is not dead, keep checking for messages from server.
         while True:
@@ -50,8 +49,7 @@ class Client:
                 if msg_from_server:
                     print(msg_from_server)
 
-                    if msg_from_server == Server.SERVER_WELCOME_MESSAGE or \
-                            msg_from_server == Server.SERVER_NAME_TAKEN_MESSAGE:
+                    if msg_from_server == Server.SERVER_WELCOME_MESSAGE or msg_from_server == Server.SERVER_NAME_TAKEN_MESSAGE:
 
                         name = input().encode()
                         self._client_socket.send(name)
@@ -59,7 +57,7 @@ class Client:
                     elif START_CHATTING in msg_from_server:
 
                         # Communication will be possible only after client's initial identification.
-                        Thread(target=self.client_to_server_handler, args=()).start()
+                        Thread(target=self._client_to_server_handler, args=()).start()
             except:
                 msg = DISCONNECT_MSG if self._client_socket.fileno() == -1 else CONNECTION_ERR
                 print(msg)
@@ -73,10 +71,10 @@ class Client:
         print("%%% You are connected to {}:{} %%%".format(Server.ADDRESS[0], Server.ADDRESS[1]), '\n')
 
         # Handle server communication.
-        Thread(target=self.server_to_client_handler, args=()).start()
+        Thread(target=self._server_to_client_handler, args=()).start()
 
 
-# =================MAIN=====================#
+# =================MAIN===================== #
 
 if __name__ == '__main__':
     client = Client()
